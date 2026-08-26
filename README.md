@@ -1,66 +1,48 @@
-## Foundry
+# Property Registry - Block Sherpa Assessment
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+Smart contract developed as part of the Block Sherpa technical assessment.
 
-Foundry consists of:
+The project implements a decentralized property registry where users can register properties, store their price, and transfer property ownership on-chain.
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## Features
 
-## Documentation
+- Register a property with an address and price
+- Store the property's current owner
+- Transfer property ownership
+- Prevent unauthorized ownership transfers
+- Prevent transfers to the zero address
+- Emit events for property registration and ownership transfers
+- Automated tests with Foundry
+- Deployment script for Ethereum Sepolia
 
-https://book.getfoundry.sh/
+## Tech Stack
 
-## Usage
+- Solidity
+- Foundry
+- Forge
+- Cast
+- Ethereum Sepolia
 
-### Build
+## Contract
 
-```shell
-$ forge build
-```
+**Network:** Ethereum Sepolia
 
-### Test
+**Contract address:**
 
-```shell
-$ forge test
-```
+`0xd6D8A3CCDc57b98768B32767A1e994d8Dbb05D18`
 
-### Format
+**Deployment transaction:**
 
-```shell
-$ forge fmt
-```
+`0xc6650fb846d1f3455e3e1f5ebb31f0bfb8f345b36732b081271768e9a749d3b5`
 
-### Gas Snapshots
+## Project Structure
 
-```shell
-$ forge snapshot
-```
+```text
+src/
+|-- PropertyRegistry.sol
 
-### Anvil
+test/
+|-- PropertyRegistry.t.sol
 
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+script/
+|-- Deploy.s.sol
