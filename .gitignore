@@ -18,3 +18,5 @@ docs/
 .env
 .env.*
 !.env.example
+# Foundry deployment artifacts
+broadcast/
