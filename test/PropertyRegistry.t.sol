@@ -18,16 +18,9 @@ contract PropertyRegistryTest is Test {
     function testRegisterProperty() public {
         vm.prank(owner);
 
-        registry.registerProperty(
-            "123 Main Street",
-            100 ether
-        );
+        registry.registerProperty("123 Main Street", 100 ether);
 
-        (
-            string memory propertyAddress,
-            address propertyOwner,
-            uint256 price
-        ) = registry.getProperty(0);
+        (string memory propertyAddress, address propertyOwner, uint256 price) = registry.getProperty(0);
 
         assertEq(propertyAddress, "123 Main Street");
         assertEq(propertyOwner, owner);
@@ -37,20 +30,13 @@ contract PropertyRegistryTest is Test {
     function testTransferOwnership() public {
         vm.prank(owner);
 
-        registry.registerProperty(
-            "123 Main Street",
-            100 ether
-        );
+        registry.registerProperty("123 Main Street", 100 ether);
 
         vm.prank(owner);
 
         registry.transferOwnership(0, newOwner);
 
-        (
-            ,
-            address propertyOwner,
-            
-        ) = registry.getProperty(0);
+        (, address propertyOwner,) = registry.getProperty(0);
 
         assertEq(propertyOwner, newOwner);
     }
@@ -58,16 +44,11 @@ contract PropertyRegistryTest is Test {
     function testOnlyOwnerCanTransfer() public {
         vm.prank(owner);
 
-        registry.registerProperty(
-            "123 Main Street",
-            100 ether
-        );
+        registry.registerProperty("123 Main Street", 100 ether);
 
         vm.prank(attacker);
 
-        vm.expectRevert(
-            bytes("Only owner can transfer ownership")
-        );
+        vm.expectRevert(bytes("Only owner can transfer ownership"));
 
         registry.transferOwnership(0, newOwner);
     }
