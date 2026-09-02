@@ -1,52 +1,142 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-contract PropertyRegistry {
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+/// @title On-Chain Property Registry
+/// @author Higor Fernando
+/// @notice Registry for recording property metadata and ownership on-chain.
+/// @dev Property documents and descriptive metadata should be stored off-chain
+///      and referenced through an IPFS-compatible URI.
+contract PropertyRegistry is Ownable2Step, Pausable, ReentrancyGuard {
+    error PropertyNotFound(uint256 propertyId);
+    error NotPropertyOwner(uint256 propertyId, address caller, address currentOwner);
+    error ZeroAddress();
+    error EmptyPropertyURI();
+    error InvalidPrice(uint256 price);
+    error SameOwner(address owner);
+    error PropertyIdOverflow();
+
+    /// @notice Represents a registered property.
+    /// @dev owner and registeredAt are packed into the same storage slot.
     struct Property {
-        string propertyAddress;
-        address owner;
         uint256 price;
+        address owner;
+        uint40 registeredAt;
+        string propertyURI;
     }
 
-    uint256 private nextPropertyId;
+    /// @notice Chain ID where the contract was deployed.
+    uint256 public immutable DEPLOYMENT_CHAIN_ID;
 
-    mapping(uint256 => Property) private properties;
+    uint256 private _nextPropertyId;
 
-    event PropertyRegistered(uint256 indexed propertyId, string propertyAddress, address indexed owner, uint256 price);
+    mapping(uint256 propertyId => Property property) private _properties;
 
-    event OwnershipTransferred(uint256 indexed propertyId, address indexed previousOwner, address indexed newOwner);
+    event PropertyRegistered(uint256 indexed propertyId, address indexed owner, uint256 price, string propertyURI);
 
-    function registerProperty(string memory _address, uint256 _price) external {
-        uint256 propertyId = nextPropertyId;
+    event PropertyOwnershipTransferred(
+        uint256 indexed propertyId, address indexed previousOwner, address indexed newOwner
+    );
 
-        properties[propertyId] = Property({propertyAddress: _address, owner: msg.sender, price: _price});
+    /// @param initialOwner Address that receives administrative ownership.
+    constructor(address initialOwner) Ownable(initialOwner) {
+        if (initialOwner == address(0)) {
+            revert ZeroAddress();
+        }
 
-        nextPropertyId++;
-
-        emit PropertyRegistered(propertyId, _address, msg.sender, _price);
+        DEPLOYMENT_CHAIN_ID = block.chainid;
     }
 
-    function transferOwnership(uint256 _propertyId, address _newOwner) external {
-        Property storage property = properties[_propertyId];
-
-        require(property.owner == msg.sender, "Only owner can transfer ownership");
-
-        require(_newOwner != address(0), "Invalid new owner");
-
-        address previousOwner = property.owner;
-
-        property.owner = _newOwner;
-
-        emit OwnershipTransferred(_propertyId, previousOwner, _newOwner);
-    }
-
-    function getProperty(uint256 _propertyId)
+    /// @notice Registers a new property.
+    /// @param propertyURI URI containing the property's off-chain metadata.
+    /// @param price Property valuation in the application's chosen base unit.
+    /// @return propertyId Identifier assigned to the new property.
+    function registerProperty(string calldata propertyURI, uint256 price)
         external
-        view
-        returns (string memory propertyAddress, address owner, uint256 price)
+        whenNotPaused
+        nonReentrant
+        returns (uint256 propertyId)
     {
-        Property memory property = properties[_propertyId];
+        if (bytes(propertyURI).length == 0) {
+            revert EmptyPropertyURI();
+        }
 
-        return (property.propertyAddress, property.owner, property.price);
+        if (price == 0) {
+            revert InvalidPrice(price);
+        }
+
+        propertyId = _nextPropertyId;
+
+        if (propertyId == type(uint256).max) {
+            revert PropertyIdOverflow();
+        }
+
+        _properties[propertyId] = Property({
+            price: price, owner: msg.sender, registeredAt: uint40(block.timestamp), propertyURI: propertyURI
+        });
+
+        unchecked {
+            _nextPropertyId = propertyId + 1;
+        }
+
+        emit PropertyRegistered(propertyId, msg.sender, price, propertyURI);
+    }
+
+    /// @notice Transfers ownership of a registered property.
+    /// @param propertyId Identifier of the property.
+    /// @param newOwner Address that will receive ownership.
+    function transferPropertyOwnership(uint256 propertyId, address newOwner) external whenNotPaused nonReentrant {
+        if (newOwner == address(0)) {
+            revert ZeroAddress();
+        }
+
+        Property storage property = _getPropertyStorage(propertyId);
+
+        address currentOwner = property.owner;
+
+        if (msg.sender != currentOwner) {
+            revert NotPropertyOwner(propertyId, msg.sender, currentOwner);
+        }
+
+        if (newOwner == currentOwner) {
+            revert SameOwner(currentOwner);
+        }
+
+        property.owner = newOwner;
+
+        emit PropertyOwnershipTransferred(propertyId, currentOwner, newOwner);
+    }
+
+    /// @notice Returns all stored information for a property.
+    function getProperty(uint256 propertyId) external view returns (Property memory) {
+        return _getPropertyStorage(propertyId);
+    }
+
+    /// @notice Returns the total number of registered properties.
+    function propertyCount() external view returns (uint256) {
+        return _nextPropertyId;
+    }
+
+    /// @notice Pauses property registration and ownership transfers.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Unpauses property registration and ownership transfers.
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /// @dev Returns a storage reference after validating property existence.
+    function _getPropertyStorage(uint256 propertyId) internal view returns (Property storage property) {
+        if (propertyId >= _nextPropertyId) {
+            revert PropertyNotFound(propertyId);
+        }
+
+        property = _properties[propertyId];
     }
 }

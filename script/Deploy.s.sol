@@ -5,13 +5,13 @@ import {Script} from "forge-std/Script.sol";
 import {PropertyRegistry} from "../src/PropertyRegistry.sol";
 
 contract Deploy is Script {
-    function run() external returns (PropertyRegistry) {
+    function run() external returns (PropertyRegistry registry) {
+        address initialOwner = vm.envAddress("INITIAL_OWNER");
+
         vm.startBroadcast();
 
-        PropertyRegistry registry = new PropertyRegistry();
+        registry = new PropertyRegistry(initialOwner);
 
         vm.stopBroadcast();
-
-        return registry;
     }
 }
