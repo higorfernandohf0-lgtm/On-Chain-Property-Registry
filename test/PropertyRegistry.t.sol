@@ -195,4 +195,61 @@ contract PropertyRegistryTest is Test {
         assertEq(property.price, price);
         assertEq(property.propertyURI, PROPERTY_URI);
     }
+
+    function testOwnershipTransferRequiresAcceptance() public {
+        vm.prank(admin);
+        registry.transferOwnership(bob);
+
+        assertEq(registry.owner(), admin);
+        assertEq(registry.pendingOwner(), bob);
+    }
+
+    function testPendingOwnerCanAcceptOwnership() public {
+        vm.prank(admin);
+        registry.transferOwnership(bob);
+
+        vm.prank(bob);
+        registry.acceptOwnership();
+
+        assertEq(registry.owner(), bob);
+        assertEq(registry.pendingOwner(), address(0));
+    }
+
+    function testUnauthorizedUserCannotAcceptOwnership() public {
+        vm.prank(admin);
+        registry.transferOwnership(bob);
+
+        vm.prank(attacker);
+
+        vm.expectRevert();
+
+        registry.acceptOwnership();
+    }
+
+    function testOldOwnerCannotPauseAfterOwnershipTransfer() public {
+        vm.prank(admin);
+        registry.transferOwnership(bob);
+
+        vm.prank(bob);
+        registry.acceptOwnership();
+
+        vm.prank(admin);
+
+        vm.expectRevert();
+
+        registry.pause();
+    }
+
+    function testNewOwnerCanPauseAfterOwnershipTransfer() public {
+        vm.prank(admin);
+        registry.transferOwnership(bob);
+
+        vm.prank(bob);
+        registry.acceptOwnership();
+
+        vm.prank(bob);
+        registry.pause();
+
+        assertTrue(registry.paused());
+    }
 }
