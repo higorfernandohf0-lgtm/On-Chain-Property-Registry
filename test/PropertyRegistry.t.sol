@@ -155,4 +155,44 @@ contract PropertyRegistryTest is Test {
 
         assertFalse(registry.paused());
     }
+
+    function testFuzzRegisterProperty(address user, uint256 price) public {
+        vm.assume(user != address(0));
+
+        price = bound(price, 1, type(uint128).max);
+
+        vm.prank(user);
+
+        uint256 propertyId = registry.registerProperty(PROPERTY_URI, price);
+
+        PropertyRegistry.Property memory property = registry.getProperty(propertyId);
+
+        assertEq(propertyId, 0);
+        assertEq(property.owner, user);
+        assertEq(property.price, price);
+        assertEq(property.propertyURI, PROPERTY_URI);
+        assertEq(registry.propertyCount(), 1);
+    }
+
+    function testFuzzTransferPropertyOwnership(address originalOwner, address newOwner, uint256 price) public {
+        vm.assume(originalOwner != address(0));
+        vm.assume(newOwner != address(0));
+        vm.assume(originalOwner != newOwner);
+
+        price = bound(price, 1, type(uint128).max);
+
+        vm.prank(originalOwner);
+
+        registry.registerProperty(PROPERTY_URI, price);
+
+        vm.prank(originalOwner);
+
+        registry.transferPropertyOwnership(0, newOwner);
+
+        PropertyRegistry.Property memory property = registry.getProperty(0);
+
+        assertEq(property.owner, newOwner);
+        assertEq(property.price, price);
+        assertEq(property.propertyURI, PROPERTY_URI);
+    }
 }
