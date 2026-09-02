@@ -1,48 +1,42 @@
-# Property Registry - Block Sherpa Assessment
+# On-Chain Property Registry
 
-Smart contract developed as part of the Block Sherpa technical assessment.
+A production-oriented smart contract project for registering and transferring property ownership on-chain.
 
-The project implements a decentralized property registry where users can register properties, store their price, and transfer property ownership on-chain.
+## Overview
 
-## Features
+This project demonstrates secure smart contract architecture using Solidity, Foundry, and OpenZeppelin.
 
-- Register a property with an address and price
-- Store the property's current owner
-- Transfer property ownership
-- Prevent unauthorized ownership transfers
-- Prevent transfers to the zero address
-- Emit events for property registration and ownership transfers
-- Automated tests with Foundry
-- Deployment script for Ethereum Sepolia
+The registry allows users to register properties, track ownership, and transfer ownership securely while keeping metadata and documents off-chain through IPFS-compatible URIs.
+
+## Current Focus
+
+- Solidity smart contract architecture
+- Foundry testing
+- Access control
+- Gas optimization
+- Security patterns
+- Fuzz testing
+- Invariant testing
+- CI/CD
+- Testnet deployment
 
 ## Tech Stack
 
 - Solidity
 - Foundry
 - Forge
-- Cast
-- Ethereum Sepolia
-
-## Contract
-
-**Network:** Ethereum Sepolia
-
-**Contract address:**
-
-`0xd6D8A3CCDc57b98768B32767A1e994d8Dbb05D18`
-
-**Deployment transaction:**
-
-`0xc6650fb846d1f3455e3e1f5ebb31f0bfb8f345b36732b081271768e9a749d3b5`
+- OpenZeppelin
+- GitHub Actions
+- Ethereum testnets
 
 ## Project Structure
 
 ```text
 src/
-|-- PropertyRegistry.sol
+└── PropertyRegistry.sol
 
 test/
-|-- PropertyRegistry.t.sol
+└── PropertyRegistry.t.sol
 
 script/
-|-- Deploy.s.sol
+└── Deploy.s.sol
