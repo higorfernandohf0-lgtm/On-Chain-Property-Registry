@@ -4,14 +4,13 @@ pragma solidity ^0.8.20;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title On-Chain Property Registry
 /// @author Higor Fernando
 /// @notice Registry for recording property metadata and ownership on-chain.
 /// @dev Property documents and descriptive metadata should remain off-chain
 ///      and be referenced through an IPFS-compatible URI.
-contract PropertyRegistry is Ownable2Step, Pausable, ReentrancyGuard {
+contract PropertyRegistry is Ownable2Step, Pausable {
     error PropertyNotFound(uint256 propertyId);
 
     error NotPropertyOwner(uint256 propertyId, address caller, address currentOwner);
@@ -56,7 +55,6 @@ contract PropertyRegistry is Ownable2Step, Pausable, ReentrancyGuard {
     function registerProperty(string calldata propertyURI, uint256 price)
         external
         whenNotPaused
-        nonReentrant
         returns (uint256 propertyId)
     {
         if (bytes(propertyURI).length == 0) {
@@ -81,7 +79,7 @@ contract PropertyRegistry is Ownable2Step, Pausable, ReentrancyGuard {
     /// @notice Transfers a registered property's ownership.
     /// @param propertyId Identifier of the property.
     /// @param newOwner Address that will receive ownership.
-    function transferPropertyOwnership(uint256 propertyId, address newOwner) external whenNotPaused nonReentrant {
+    function transferPropertyOwnership(uint256 propertyId, address newOwner) external whenNotPaused {
         if (newOwner == address(0)) {
             revert ZeroAddress();
         }
