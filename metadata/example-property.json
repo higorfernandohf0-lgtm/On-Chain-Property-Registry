@@ -1,0 +1,8 @@
+{
+  "name": "Example Property #1",
+  "description": "Example metadata for the On-Chain Property Registry portfolio project.",
+  "propertyType": "Residential",
+  "city": "Example City",
+  "country": "Example Country",
+  "documents": []
+}
