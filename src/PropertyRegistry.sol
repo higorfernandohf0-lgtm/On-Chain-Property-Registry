@@ -9,16 +9,17 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// @title On-Chain Property Registry
 /// @author Higor Fernando
 /// @notice Registry for recording property metadata and ownership on-chain.
-/// @dev Property documents and descriptive metadata should be stored off-chain
-///      and referenced through an IPFS-compatible URI.
+/// @dev Property documents and descriptive metadata should remain off-chain
+///      and be referenced through an IPFS-compatible URI.
 contract PropertyRegistry is Ownable2Step, Pausable, ReentrancyGuard {
     error PropertyNotFound(uint256 propertyId);
+
     error NotPropertyOwner(uint256 propertyId, address caller, address currentOwner);
+
     error ZeroAddress();
     error EmptyPropertyURI();
     error InvalidPrice(uint256 price);
     error SameOwner(address owner);
-    error PropertyIdOverflow();
 
     /// @notice Represents a registered property.
     /// @dev owner and registeredAt are packed into the same storage slot.
@@ -29,7 +30,7 @@ contract PropertyRegistry is Ownable2Step, Pausable, ReentrancyGuard {
         string propertyURI;
     }
 
-    /// @notice Chain ID where the contract was deployed.
+    /// @notice Chain ID where this registry was deployed.
     uint256 public immutable DEPLOYMENT_CHAIN_ID;
 
     uint256 private _nextPropertyId;
@@ -43,18 +44,15 @@ contract PropertyRegistry is Ownable2Step, Pausable, ReentrancyGuard {
     );
 
     /// @param initialOwner Address that receives administrative ownership.
+    /// @dev OpenZeppelin Ownable rejects address(0) automatically.
     constructor(address initialOwner) Ownable(initialOwner) {
-        if (initialOwner == address(0)) {
-            revert ZeroAddress();
-        }
-
         DEPLOYMENT_CHAIN_ID = block.chainid;
     }
 
     /// @notice Registers a new property.
-    /// @param propertyURI URI containing the property's off-chain metadata.
+    /// @param propertyURI URI referencing the property's off-chain metadata.
     /// @param price Property valuation in the application's chosen base unit.
-    /// @return propertyId Identifier assigned to the new property.
+    /// @return propertyId Identifier assigned to the property.
     function registerProperty(string calldata propertyURI, uint256 price)
         external
         whenNotPaused
@@ -71,22 +69,16 @@ contract PropertyRegistry is Ownable2Step, Pausable, ReentrancyGuard {
 
         propertyId = _nextPropertyId;
 
-        if (propertyId == type(uint256).max) {
-            revert PropertyIdOverflow();
-        }
-
         _properties[propertyId] = Property({
             price: price, owner: msg.sender, registeredAt: uint40(block.timestamp), propertyURI: propertyURI
         });
 
-        unchecked {
-            _nextPropertyId = propertyId + 1;
-        }
+        _nextPropertyId = propertyId + 1;
 
         emit PropertyRegistered(propertyId, msg.sender, price, propertyURI);
     }
 
-    /// @notice Transfers ownership of a registered property.
+    /// @notice Transfers a registered property's ownership.
     /// @param propertyId Identifier of the property.
     /// @param newOwner Address that will receive ownership.
     function transferPropertyOwnership(uint256 propertyId, address newOwner) external whenNotPaused nonReentrant {
@@ -111,22 +103,25 @@ contract PropertyRegistry is Ownable2Step, Pausable, ReentrancyGuard {
         emit PropertyOwnershipTransferred(propertyId, currentOwner, newOwner);
     }
 
-    /// @notice Returns all stored information for a property.
+    /// @notice Returns the stored information for a property.
+    /// @param propertyId Identifier of the property.
     function getProperty(uint256 propertyId) external view returns (Property memory) {
         return _getPropertyStorage(propertyId);
     }
 
-    /// @notice Returns the total number of registered properties.
+    /// @notice Returns the number of registered properties.
     function propertyCount() external view returns (uint256) {
         return _nextPropertyId;
     }
 
     /// @notice Pauses property registration and ownership transfers.
+    /// @dev Only the administrative owner may call this function.
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @notice Unpauses property registration and ownership transfers.
+    /// @notice Resumes property registration and ownership transfers.
+    /// @dev Only the administrative owner may call this function.
     function unpause() external onlyOwner {
         _unpause();
     }

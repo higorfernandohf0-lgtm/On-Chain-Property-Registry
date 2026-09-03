@@ -2,6 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+
 import {PropertyRegistry} from "../src/PropertyRegistry.sol";
 
 contract PropertyRegistryTest is Test {
@@ -25,6 +29,12 @@ contract PropertyRegistryTest is Test {
 
     function testInitialOwnerIsAdmin() public view {
         assertEq(registry.owner(), admin);
+    }
+
+    function testZeroAddressCannotBeInitialOwner() public {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
+
+        new PropertyRegistry(address(0));
     }
 
     function testDeploymentChainIdIsStored() public view {
@@ -74,6 +84,7 @@ contract PropertyRegistryTest is Test {
 
     function testTransferPropertyOwnership() public {
         vm.prank(alice);
+
         registry.registerProperty(PROPERTY_URI, 100 ether);
 
         vm.expectEmit(true, true, true, true);
@@ -81,6 +92,7 @@ contract PropertyRegistryTest is Test {
         emit PropertyRegistry.PropertyOwnershipTransferred(0, alice, bob);
 
         vm.prank(alice);
+
         registry.transferPropertyOwnership(0, bob);
 
         PropertyRegistry.Property memory property = registry.getProperty(0);
@@ -90,6 +102,7 @@ contract PropertyRegistryTest is Test {
 
     function testUnauthorizedUserCannotTransferProperty() public {
         vm.prank(alice);
+
         registry.registerProperty(PROPERTY_URI, 100 ether);
 
         vm.prank(attacker);
@@ -101,6 +114,7 @@ contract PropertyRegistryTest is Test {
 
     function testCannotTransferToZeroAddress() public {
         vm.prank(alice);
+
         registry.registerProperty(PROPERTY_URI, 100 ether);
 
         vm.prank(alice);
@@ -112,6 +126,7 @@ contract PropertyRegistryTest is Test {
 
     function testCannotTransferToSameOwner() public {
         vm.prank(alice);
+
         registry.registerProperty(PROPERTY_URI, 100 ether);
 
         vm.prank(alice);
@@ -129,20 +144,18 @@ contract PropertyRegistryTest is Test {
 
     function testOwnerCanPause() public {
         vm.prank(admin);
+
         registry.pause();
 
         assertTrue(registry.paused());
     }
 
-    function testRegistrationRevertsWhenPaused() public {
-        vm.prank(admin);
+    function testNonOwnerCannotPause() public {
+        vm.prank(attacker);
+
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, attacker));
+
         registry.pause();
-
-        vm.prank(alice);
-
-        vm.expectRevert();
-
-        registry.registerProperty(PROPERTY_URI, 100 ether);
     }
 
     function testOwnerCanUnpause() public {
@@ -154,6 +167,43 @@ contract PropertyRegistryTest is Test {
         vm.stopPrank();
 
         assertFalse(registry.paused());
+    }
+
+    function testNonOwnerCannotUnpause() public {
+        vm.prank(admin);
+        registry.pause();
+
+        vm.prank(attacker);
+
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, attacker));
+
+        registry.unpause();
+    }
+
+    function testRegistrationRevertsWhenPaused() public {
+        vm.prank(admin);
+        registry.pause();
+
+        vm.prank(alice);
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+
+        registry.registerProperty(PROPERTY_URI, 100 ether);
+    }
+
+    function testTransferRevertsWhenPaused() public {
+        vm.prank(alice);
+
+        registry.registerProperty(PROPERTY_URI, 100 ether);
+
+        vm.prank(admin);
+        registry.pause();
+
+        vm.prank(alice);
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+
+        registry.transferPropertyOwnership(0, bob);
     }
 
     function testFuzzRegisterProperty(address user, uint256 price) public {
@@ -176,7 +226,9 @@ contract PropertyRegistryTest is Test {
 
     function testFuzzTransferPropertyOwnership(address originalOwner, address newOwner, uint256 price) public {
         vm.assume(originalOwner != address(0));
+
         vm.assume(newOwner != address(0));
+
         vm.assume(originalOwner != newOwner);
 
         price = bound(price, 1, type(uint128).max);
@@ -192,31 +244,39 @@ contract PropertyRegistryTest is Test {
         PropertyRegistry.Property memory property = registry.getProperty(0);
 
         assertEq(property.owner, newOwner);
+
         assertEq(property.price, price);
+
         assertEq(property.propertyURI, PROPERTY_URI);
     }
 
     function testOwnershipTransferRequiresAcceptance() public {
         vm.prank(admin);
+
         registry.transferOwnership(bob);
 
         assertEq(registry.owner(), admin);
+
         assertEq(registry.pendingOwner(), bob);
     }
 
     function testPendingOwnerCanAcceptOwnership() public {
         vm.prank(admin);
+
         registry.transferOwnership(bob);
 
         vm.prank(bob);
+
         registry.acceptOwnership();
 
         assertEq(registry.owner(), bob);
+
         assertEq(registry.pendingOwner(), address(0));
     }
 
     function testUnauthorizedUserCannotAcceptOwnership() public {
         vm.prank(admin);
+
         registry.transferOwnership(bob);
 
         vm.prank(attacker);
@@ -228,26 +288,31 @@ contract PropertyRegistryTest is Test {
 
     function testOldOwnerCannotPauseAfterOwnershipTransfer() public {
         vm.prank(admin);
+
         registry.transferOwnership(bob);
 
         vm.prank(bob);
+
         registry.acceptOwnership();
 
         vm.prank(admin);
 
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, admin));
 
         registry.pause();
     }
 
     function testNewOwnerCanPauseAfterOwnershipTransfer() public {
         vm.prank(admin);
+
         registry.transferOwnership(bob);
 
         vm.prank(bob);
+
         registry.acceptOwnership();
 
         vm.prank(bob);
+
         registry.pause();
 
         assertTrue(registry.paused());
