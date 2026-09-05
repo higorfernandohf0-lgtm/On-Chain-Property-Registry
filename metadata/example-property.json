@@ -1,8 +1,21 @@
 {
+  "schemaVersion": "1.0.0",
   "name": "Example Property #1",
-  "description": "Example metadata for the On-Chain Property Registry portfolio project.",
+  "description": "Demonstration metadata for the On-Chain Property Registry portfolio project. This record does not represent legal ownership of real-world property.",
   "propertyType": "Residential",
-  "city": "Example City",
-  "country": "Example Country",
-  "documents": []
+  "location": {
+    "city": "Example City",
+    "region": "Example Region",
+    "country": "Example Country"
+  },
+  "attributes": {
+    "areaSquareMeters": 120,
+    "bedrooms": 3,
+    "bathrooms": 2
+  },
+  "documents": [],
+  "verification": {
+    "status": "unverified",
+    "method": "portfolio-demo"
+  }
 }
