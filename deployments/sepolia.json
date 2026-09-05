@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0.0",
+  "network": {
+    "name": "Ethereum Sepolia",
+    "chainId": 11155111
+  },
+  "contract": {
+    "name": "PropertyRegistry",
+    "address": "0x620977384C144C3Fd371930a388Dc7973F02D2eF",
+    "deploymentBlock": 11636171,
+    "deploymentTransaction": "0xf2129ea31f536da0e58129af9ebaae3cf7bf10738b99d8d819137f55134bad6e",
+    "verified": true,
+    "explorer": "https://sepolia.etherscan.io/address/0x620977384C144C3Fd371930a388Dc7973F02D2eF"
+  },
+  "exampleProperty": {
+    "propertyId": 0,
+    "owner": "0x54D7776D206f5C4EAF195d0eE460eEC4F4EdbBF8",
+    "registryPrice": "100000000000000000000",
+    "metadataURI": "ipfs://bafkreico2sfhfgt5gp34ubc5li43tmpkdory3clyhf5xojorafq6ngt6qu",
+    "metadataCID": "bafkreico2sfhfgt5gp34ubc5li43tmpkdory3clyhf5xojorafq6ngt6qu",
+    "metadataSha256": "4ed48a729a7d33f7ca045d5a39b9b1ea1ba38d8978397b7725d10161e69a7e85",
+    "registrationBlock": 11637322,
+    "registrationTransaction": "0x0584287c29fbce40026317abcbbfa8b4fd1fd4baa13c087bc8af05431f6e4625"
+  }
+}
